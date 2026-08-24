@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>牛来人格类型测试</title>
+<style>
+  :root {
+    --bg: #f6efe3;
+    --card: #fffaf0;
+    --line: #ecdcbf;
+    --wood: #8b5e3c;
+    --wood-dark: #5b3d24;
+    --wood-light: #b08a5f;
+    --wood-grad: linear-gradient(135deg, #c08a52 0%, #8b5e3c 100%);
+    --text: #4a3426;
+    --text-soft: #9c7b5a;
+    --faint: #b8a084;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  #app {
+    max-width: 640px;
+    margin: 0 auto;
+    min-height: 100vh;
+    position: relative;
+    background:
+      radial-gradient(circle at 15% 8%, rgba(201,169,125,.35) 0%, rgba(201,169,125,0) 45%),
+      radial-gradient(circle at 88% 92%, rgba(178,139,95,.3) 0%, rgba(178,139,95,0) 40%),
+      var(--bg);
+  }
+
+  /* ---- 顶栏（返回键） ---- */
+  #topbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: rgba(246,239,227,.96);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 1px solid var(--line);
+  }
+  #topbar.hidden { display: none; }
+  .back-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: var(--wood);
+    cursor: pointer;
+    padding: 2px 10px 2px 2px;
+    line-height: 1;
+  }
+  .back-btn:hover { color: var(--wood-dark); }
+  #topTitle { font-size: 17px; font-weight: 700; color: var(--wood-dark); }
+
+  /* ---- 视图切换 ---- */
+  .view { display: none; padding: 0 20px 40px; }
+  .view.active { display: block; animation: fadeIn .3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  /* ---- 通用按钮 ---- */
+  .btn {
+    display: block;
+    width: 100%;
+    height: 50px;
+    border: none;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all .15s ease;
+    margin-bottom: 12px;
+  }
+  .btn:last-child { margin-bottom: 0; }
+  .btn:hover { opacity: .9; transform: translateY(-1px); }
+  .btn.primary {
+    background: var(--wood-grad);
+    color: #fffaf0;
+    box-shadow: 0 6px 16px rgba(139,94,60,.35);
+  }
+  .btn.plain {
+    background: var(--card);
+    color: var(--wood);
+    border: 2px solid #d9c3a0;
+  }
+  .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+
+  /* ---- 首页 ---- */
+  #view-home { display: none; min-height: 100vh; flex-direction: column; justify-content: center; }
+  #view-home.active { display: flex; }
+  .hero { text-align: center; margin-bottom: 60px; }
+  .logo-circle {
+    width: 110px; height: 110px;
+    border-radius: 50%;
+    margin: 0 auto 28px;
+    overflow: hidden;
+    background: linear-gradient(145deg, #b98a58 0%, #7c5534 100%);
+    border: 5px solid rgba(255,250,240,.85);
+    box-shadow: 0 12px 28px rgba(124,85,52,.4), inset 0 3px 8px rgba(255,255,255,.25);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-circle img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+  .logo-text { color: #fff8ec; font-size: 22px; font-weight: 700; letter-spacing: 4px; }
+  .welcome-title { font-size: 28px; font-weight: 700; color: var(--wood-dark); letter-spacing: 1px; margin-bottom: 10px; }
+  .welcome-sub { font-size: 15px; color: var(--text-soft); }
+  .footer-text { margin-top: 40px; text-align: center; font-size: 13px; color: var(--faint); }
+
+  /* ---- 答题页 ---- */
+  .quiz-head { padding: 20px 0 16px; }
+  .progress-text { font-size: 14px; color: var(--wood); font-weight: 600; }
+  .progress-track {
+    margin-top: 10px; height: 8px; border-radius: 4px;
+    background: #e9dcc3; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; border-radius: 4px;
+    background: linear-gradient(90deg, #c9a06b 0%, #8b5e3c 100%);
+    transition: width .25s ease;
+  }
+  .question-card {
+    background: var(--card);
+    border: 2px solid var(--line);
+    border-radius: 16px;
+    padding: 22px 20px;
+    margin-bottom: 22px;
+    box-shadow: 0 8px 20px rgba(139,94,60,.08);
+  }
+  .q-index { font-size: 13px; color: var(--wood-light); font-weight: 600; margin-bottom: 10px; }
+  .q-text { font-size: 19px; font-weight: 600; line-height: 1.55; }
+  .option {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--card);
+    border: 2px solid #e5d5b8;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all .15s ease;
+    font-size: 15px;
+  }
+  .option:hover { border-color: #c9ae87; }
+  .option.selected { border-color: var(--wood); background: #fdf1dd; box-shadow: 0 4px 12px rgba(139,94,60,.18); }
+  .radio {
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 2px solid #c9ae87; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .option.selected .radio { border-color: var(--wood); }
+  .option.selected .radio::after { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--wood); }
+  .quiz-nav { display: flex; justify-content: space-between; gap: 14px; margin-top: 8px; }
+  .quiz-nav .btn { width: 48%; }
+
+  /* ---- 结果页 ---- */
+  .result-card {
+    background: var(--card);
+    border: 2px solid var(--line);
+    border-radius: 18px;
+    padding: 24px 20px 26px;
+    margin-top: 18px;
+    box-shadow: 0 10px 26px rgba(139,94,60,.1);
+  }
+  .result-title { text-align: center; font-size: 17px; color: var(--wood); margin-bottom: 18px; }
+  .image-wrap {
+    width: 100%; height: 240px; border-radius: 14px; overflow: hidden;
+    background: #f3e8d3; margin-bottom: 20px;
+  }
+  .image-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .image-placeholder {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .placeholder-letters { font-size: 40px; font-weight: 800; color: #c4a377; letter-spacing: 6px; }
+  .placeholder-hint { margin-top: 8px; font-size: 12px; color: #c0a585; text-align: center; padding: 0 20px; }
+  .type-name { text-align: center; font-size: 30px; font-weight: 800; color: var(--wood-dark); margin-bottom: 8px; }
+  .type-tag-wrap { text-align: center; margin-bottom: 16px; }
+  .type-tag {
+    display: inline-block; padding: 4px 14px; border-radius: 13px;
+    background: #f3e8d3; color: var(--wood); font-size: 13px; font-weight: 600;
+  }
+  .type-desc { font-size: 15px; color: #5d4a37; line-height: 1.8; text-align: justify; margin-bottom: 22px; }
+  .dim { margin-bottom: 16px; }
+  .dim-head { display: flex; justify-content: space-between; font-size: 13px; color: var(--wood); margin-bottom: 6px; }
+  .dim-name { color: var(--wood-light); }
+  .dim-bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: #efe3cb; }
+  .bar-left { background: linear-gradient(90deg, #b98a58 0%, #8b5e3c 100%); }
+  .bar-right { background: #e0c3a1; }
+  .actions { margin-top: 22px; }
+  .empty { text-align: center; padding-top: 120px; }
+  .empty-text { font-size: 16px; color: var(--text-soft); margin-bottom: 24px; }
+  .empty .btn { max-width: 300px; margin: 0 auto; }
+
+  /* ---- 所有结果页 ---- */
+  .grid { display: flex; flex-wrap: wrap; justify-content: space-between; padding-top: 18px; }
+  .item {
+    width: 48.5%; margin-bottom: 16px;
+    background: var(--card);
+    border: 2px solid var(--line);
+    border-radius: 14px;
+    padding: 10px;
+    text-align: center;
+  }
+  .item .img {
+    width: 100%; height: 170px; border-radius: 10px; background: #f3e8d3;
+    object-fit: cover; display: block;
+  }
+  .item .placeholder {
+    height: 170px; border-radius: 10px; background: #f3e8d3;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; font-weight: 800; color: #c4a377;
+  }
+  .item .name { margin-top: 10px; font-size: 15px; font-weight: 600; line-height: 1.4; }
+  .item .code { margin-top: 4px; font-size: 12px; color: var(--wood-light); }
+  .tip { margin-top: 10px; text-align: center; font-size: 13px; color: var(--faint); }
+
+  @media (max-width: 480px) {
+    #app { padding: 0 14px 30px; }
+    .item .img, .item .placeholder { height: 140px; }
+    .welcome-title { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- 顶栏：返回键 + 标题（结果页/所有结果页显示） -->
+  <header id="topbar" class="hidden">
+    <button class="back-btn" id="btnBack" title="返回">←</button>
+    <span id="topTitle"></span>
+  </header>
+
+  <!-- 首页 -->
+  <section id="view-home" class="view">
+    <div class="hero">
+      <div class="logo-circle" id="logoCircle"></div>
+      <div class="welcome-title" id="welcomeTitle"></div>
+      <div class="welcome-sub" id="welcomeSub"></div>
+    </div>
+    <div class="actions" id="homeActions"></div>
+    <div class="footer-text" id="homeFooter"></div>
+  </section>
+
+  <!-- 答题页 -->
+  <section id="view-quiz" class="view">
+    <div class="quiz-head">
+      <div class="progress-text" id="progressText"></div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+    <div class="question-card">
+      <div class="q-index" id="qIndex"></div>
+      <div class="q-text" id="qText"></div>
+    </div>
+    <div id="optionsBox"></div>
+    <div class="quiz-nav">
+      <button class="btn plain" id="btnPrev">上一题</button>
+      <button class="btn primary" id="btnNext">下一题</button>
+    </div>
+  </section>
+
+  <!-- 结果页 -->
+  <section id="view-result" class="view">
+    <div id="resultBody"></div>
+  </section>
+
+  <!-- 所有结果页 -->
+  <section id="view-all" class="view">
+    <div class="grid" id="allGrid"></div>
+    <div class="tip" id="allTip"></div>
+  </section>
+
+</div>
+
+<script src="config.js"></script>
+<script>
+(function () {
+  'use strict';
+  var C = window.MBTI_CONFIG;
+  if (!C) { document.body.innerHTML = '<p style="padding:40px">配置加载失败：请确认 config.js 与本页在同一目录。</p>'; return; }
+
+  document.title = C.appInfo.appName;
+
+  /* ---------------- 存储（与小程序同 key，浏览器用 localStorage） ---------------- */
+  function getStore(key) { try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
+  function setStore(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {} }
+  function delStore(key) { try { localStorage.removeItem(key); } catch (e) {} }
+
+  var OPPOSITE = { E: 'I', I: 'E', S: 'N', N: 'S', T: 'F', F: 'T', J: 'P', P: 'J' };
+  var TOTAL = C.questions.length;
+
+  /* ---------------- 路由（hash） ---------------- */
+  var ROUTES = { '': 'home', '#/': 'home', '#/home': 'home', '#/quiz': 'quiz', '#/result': 'result', '#/all': 'all' };
+  function currentView() { return ROUTES[location.hash] || 'home'; }
+
+  function showView(name) {
+    document.querySelectorAll('.view').forEach(function (v) { v.classList.remove('active'); });
+    document.getElementById('view-' + name).classList.add('active');
+    var topbar = document.getElementById('topbar');
+    if (name === 'result' || name === 'all') {
+      topbar.classList.remove('hidden');
+      document.getElementById('topTitle').textContent = name === 'result' ? '测试结果' : C.ui.showAllTitle;
+    } else {
+      topbar.classList.add('hidden');
+    }
+    if (name === 'home') initHome();
+    if (name === 'quiz') initQuiz();
+    if (name === 'result') initResult();
+    if (name === 'all') initAll();
+    window.scrollTo(0, 0);
+  }
+
+  window.addEventListener('hashchange', function () { showView(currentView()); });
+  document.getElementById('btnBack').addEventListener('click', function () {
+    if (history.length > 1) history.back(); else location.hash = '#/home';
+  });
+
+  /* ---------------- 首页 ---------------- */
+  function initHome() {
+    document.getElementById('welcomeTitle').textContent = C.appInfo.welcomeTitle;
+    document.getElementById('welcomeSub').textContent = C.appInfo.welcomeSubtitle;
+    document.getElementById('homeFooter').textContent = C.appInfo.footerText;
+
+    var circle = document.getElementById('logoCircle');
+    circle.innerHTML = '';
+    if (C.appInfo.logoImage) {
+      var img = document.createElement('img');
+      img.src = C.appInfo.logoImage;
+      img.alt = C.appInfo.logoText;
+      circle.appendChild(img);
+    } else {
+      var t = document.createElement('span');
+      t.className = 'logo-text';
+      t.textContent = C.appInfo.logoText;
+      circle.appendChild(t);
+    }
+
+    var saved = getStore(C.storageKeys.progress);
+    var hasProgress = !!(saved && Array.isArray(saved.answers) && saved.answers.some(function (v) { return typeof v === 'number'; }));
+    var box = document.getElementById('homeActions');
+    box.innerHTML = '';
+    if (hasProgress) {
+      box.appendChild(makeBtn('primary', C.appInfo.continueBtnText, function () { location.hash = '#/quiz'; }));
+      box.appendChild(makeBtn('plain', C.appInfo.restartBtnText, function () {
+        delStore(C.storageKeys.progress); delStore(C.storageKeys.result);
+        location.hash = '#/quiz';
+      }));
+    } else {
+      box.appendChild(makeBtn('primary', C.appInfo.startBtnText, function () {
+        delStore(C.storageKeys.progress); delStore(C.storageKeys.result);
+        location.hash = '#/quiz';
+      }));
+    }
+  }
+
+  function makeBtn(cls, text, onClick) {
+    var b = document.createElement('button');
+    b.className = 'btn ' + cls;
+    b.textContent = text;
+    b.addEventListener('click', onClick);
+    return b;
+  }
+
+  /* ---------------- 答题页 ---------------- */
+  var quiz = { answers: [], current: 0 };
+
+  function initQuiz() {
+    var saved = getStore(C.storageKeys.progress);
+    if (saved && Array.isArray(saved.answers) && saved.answers.length === TOTAL) {
+      quiz.answers = saved.answers.map(function (v) { return typeof v === 'number' ? v : null; });
+      quiz.current = Math.min(Number(saved.current) || 0, TOTAL - 1);
+    } else {
+      quiz.answers = new Array(TOTAL).fill(null);
+      quiz.current = 0;
+    }
+    renderQuestion();
+    document.getElementById('btnPrev').addEventListener('click', function () {
+      if (quiz.current <= 0) return;
+      quiz.current--; renderQuestion();
+    });
+    document.getElementById('btnNext').addEventListener('click', function () {
+      if (typeof quiz.answers[quiz.current] !== 'number') return; // 不允许跳过
+      if (quiz.current === TOTAL - 1) { finish(); return; }
+      quiz.current++; renderQuestion();
+    });
+  }
+
+  function renderQuestion() {
+    var q = C.questions[quiz.current];
+    document.getElementById('progressText').textContent = '第 ' + (quiz.current + 1) + ' / ' + TOTAL + ' 题';
+    document.getElementById('progressFill').style.width = ((quiz.current + 1) / TOTAL * 100) + '%';
+    document.getElementById('qIndex').textContent = '第 ' + (quiz.current + 1) + ' 题';
+    document.getElementById('qText').textContent = q.text;
+    document.getElementById('btnPrev').disabled = quiz.current === 0;
+    var next = document.getElementById('btnNext');
+    next.textContent = quiz.current === TOTAL - 1 ? '查看结果' : '下一题';
+    next.disabled = typeof quiz.answers[quiz.current] !== 'number';
+
+    var box = document.getElementById('optionsBox');
+    box.innerHTML = '';
+    var sel = quiz.answers[quiz.current];
+    C.options.forEach(function (opt) {
+      var div = document.createElement('div');
+      div.className = 'option' + (sel === opt.value ? ' selected' : '');
+      div.innerHTML = '<span class="radio"></span><span>' + opt.label + '</span>';
+      div.addEventListener('click', function () {
+        quiz.answers[quiz.current] = opt.value;
+        saveProgress();
+        renderQuestion();
+      });
+      box.appendChild(div);
+    });
+  }
+
+  function saveProgress() {
+    setStore(C.storageKeys.progress, { answers: quiz.answers, current: quiz.current, updatedAt: Date.now() });
+  }
+
+  /* 与小程序一致的计分：key 字母得 v 分，对立字母得 6-v 分，每维取高分字母 */
+  function finish() {
+    var scores = { E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 };
+    C.questions.forEach(function (q, i) {
+      var v = quiz.answers[i];
+      if (typeof v !== 'number') return;
+      scores[q.key] += v;
+      scores[OPPOSITE[q.key]] += 6 - v;
+    });
+    var type = '';
+    var dims = [];
+    C.dimensions.forEach(function (dim) {
+      var a = dim.key[0], b = dim.key[1];
+      var sum = scores[a] + scores[b] || 1;
+      var pctA = Math.round(scores[a] / sum * 100);
+      var pctB = 100 - pctA;
+      type += pctA >= pctB ? a : b;
+      dims.push({ key: dim.key, name: dim.name, left: a, right: b, pctLeft: pctA, pctRight: pctB });
+    });
+    setStore(C.storageKeys.result, { type: type, dims: dims, finishedAt: Date.now() });
+    delStore(C.storageKeys.progress);
+    location.hash = '#/result';
+  }
+
+  /* ---------------- 结果页 ---------------- */
+  function initResult() {
+    var result = getStore(C.storageKeys.result);
+    var body = document.getElementById('resultBody');
+    if (!result || !result.type) {
+      body.innerHTML =
+        '<div class="empty"><div class="empty-text">还没有测试结果，先去做 31 道题吧</div>' +
+        '<button class="btn primary" onclick="location.hash=\'#/quiz\'">去做测试</button></div>';
+      return;
+    }
+    var type = result.type;
+    var p = null;
+    if (Array.isArray(C.personalities)) {
+      for (var i = 0; i < C.personalities.length; i++) {
+        if (C.personalities[i].code === type) { p = C.personalities[i]; break; }
+      }
+    }
+    var imgHtml = p && p.imageSrc
+      ? '<img src="' + p.imageSrc + '" alt="' + (p.name || type) + '">'
+      : '<div class="image-placeholder"><div class="placeholder-letters">' + type + '</div>' +
+        '<div class="placeholder-hint">' + C.ui.imagePlaceholderHint + '</div></div>';
+    var nameText = p ? p.name : '待配置';
+    var descText = p ? p.desc : 'config.js 的 personalities 中还没有 code 为「' + type + '」的配置，请补充 name / desc / imageSrc。';
+
+    var dimsHtml = (result.dims || []).map(function (d) {
+      return '<div class="dim">' +
+        '<div class="dim-head"><span>' + d.left + ' ' + d.pctLeft + '%</span>' +
+        '<span class="dim-name">' + d.name + '</span>' +
+        '<span>' + d.right + ' ' + d.pctRight + '%</span></div>' +
+        '<div class="dim-bar"><div class="bar-left" style="width:' + d.pctLeft + '%"></div>' +
+        '<div class="bar-right" style="width:' + d.pctRight + '%"></div></div></div>';
+    }).join('');
+
+    body.innerHTML =
+      '<div class="result-card">' +
+        '<div class="result-title">' + C.ui.resultTitle + '</div>' +
+        '<div class="image-wrap">' + imgHtml + '</div>' +
+        '<div class="type-name">' + esc(nameText) + '</div>' +
+        '<div class="type-tag-wrap"><span class="type-tag">MBTI 类型：' + type + '</span></div>' +
+        '<div class="type-desc">' + esc(descText) + '</div>' +
+        '<div class="dims">' + dimsHtml + '</div>' +
+        '<div class="actions">' +
+          '<button class="btn primary" id="btnRestart">' + C.ui.restartBtnText + '</button>' +
+          '<button class="btn plain" id="btnShowAll">' + C.ui.showAllBtnText + '</button>' +
+          '<button class="btn plain" id="btnHome">' + C.ui.homeBtnText + '</button>' +
+        '</div>' +
+      '</div>';
+
+    document.getElementById('btnRestart').addEventListener('click', function () {
+      delStore(C.storageKeys.progress); delStore(C.storageKeys.result);
+      location.hash = '#/home';
+    });
+    document.getElementById('btnShowAll').addEventListener('click', function () { location.hash = '#/all'; });
+    document.getElementById('btnHome').addEventListener('click', function () { location.hash = '#/home'; });
+  }
+
+  /* ---------------- 所有结果页（2 列网格，名称+图片，不含文案） ---------------- */
+  function initAll() {
+    var grid = document.getElementById('allGrid');
+    grid.innerHTML = '';
+    (Array.isArray(C.personalities) ? C.personalities : []).forEach(function (p) {
+      var item = document.createElement('div');
+      item.className = 'item';
+      var imgHtml = p.imageSrc
+        ? '<img class="img" src="' + p.imageSrc + '" alt="' + esc(p.name) + '">'
+        : '<div class="placeholder">' + p.code + '</div>';
+      item.innerHTML = imgHtml + '<div class="name">' + esc(p.name) + '</div><div class="code">' + p.code + '</div>';
+      grid.appendChild(item);
+    });
+    document.getElementById('allTip').textContent =
+      '共 ' + (C.personalities ? C.personalities.length : 0) + ' 种人格 · 点左上角返回查看你的测试结果';
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  /* ---------------- 启动 ---------------- */
+  showView(currentView());
+})();
+</script>
+</body>
+</html>
