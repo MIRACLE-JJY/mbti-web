@@ -332,7 +332,7 @@
     circle.innerHTML = '';
     if (C.appInfo.logoImage) {
       var img = document.createElement('img');
-      img.src = C.appInfo.logoImage;
+      img.src = assetPath(C.appInfo.logoImage);
       img.alt = C.appInfo.logoText;
       circle.appendChild(img);
     } else {
@@ -465,7 +465,7 @@
       }
     }
     var imgHtml = p && p.imageSrc
-      ? '<img src="' + p.imageSrc + '" alt="' + (p.name || type) + '">'
+      ? '<img src="' + assetPath(p.imageSrc) + '" alt="' + (p.name || type) + '">'
       : '<div class="image-placeholder"><div class="placeholder-letters">' + type + '</div>' +
         '<div class="placeholder-hint">' + C.ui.imagePlaceholderHint + '</div></div>';
     var nameText = p ? p.name : '待配置';
@@ -511,7 +511,7 @@
       var item = document.createElement('div');
       item.className = 'item';
       var imgHtml = p.imageSrc
-        ? '<img class="img" src="' + p.imageSrc + '" alt="' + esc(p.name) + '">'
+        ? '<img class="img" src="' + assetPath(p.imageSrc) + '" alt="' + esc(p.name) + '">'
         : '<div class="placeholder">' + p.code + '</div>';
       item.innerHTML = imgHtml + '<div class="name">' + esc(p.name) + '</div><div class="code">' + p.code + '</div>';
       grid.appendChild(item);
@@ -522,6 +522,11 @@
 
   function esc(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  /* 资源路径：去掉开头的 /，兼容 GitHub Pages 子路径部署（如 /mbti-web/） */
+  function assetPath(p) {
+    return String(p || '').replace(/^\/+/, '');
   }
 
   /* ---------------- 启动 ---------------- */
